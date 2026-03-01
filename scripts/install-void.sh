@@ -20,13 +20,16 @@ SRC_DIR="$REAL_HOME/.local/src/nilwm"
 
 # ── 1. Install Xorg, xinit, fonts and build dependencies ──
 echo "[1/6] Installing packages..."
-xbps-install -Sy \
-    xorg xinit \
+if ! xbps-install -Sy >/dev/null 2>&1; then
+    echo "WARNING: xbps-install sync had errors. Continuing anyway..."
+fi
+xbps-install -y \
+    xorg xinit xsetroot \
     base-devel \
     libX11-devel libXft-devel libXinerama-devel freetype-devel fontconfig-devel \
     dejavu-fonts-ttf \
     dmenu \
-    git xsetroot >/dev/null
+    git >/dev/null || echo "WARNING: some packages may not have installed"
 
 # Install st terminal if not present
 if ! command -v st >/dev/null 2>&1; then

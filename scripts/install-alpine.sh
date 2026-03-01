@@ -20,7 +20,9 @@ SRC_DIR="$REAL_HOME/.local/src/nilwm"
 
 # ── 1. Install Xorg, xinit, fonts and build dependencies ──
 echo "[1/6] Installing packages..."
-apk update -q
+if ! apk update -q; then
+    echo "WARNING: apk update had errors. Continuing anyway..."
+fi
 apk add -q \
     xorg-server xinit xf86-video-vesa xf86-input-libinput \
     build-base \

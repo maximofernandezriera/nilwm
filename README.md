@@ -25,7 +25,7 @@ Each script installs **Xorg + xinit + fonts + build tools**, compiles NilWM, and
 
 ### Debian / Ubuntu
 ```sh
-sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/maximofernandezriera/nilwm/main/scripts/install-debian.sh)"
+sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/maximofernandezriera/nilwm/master/scripts/install-debian.sh)"
 ```
 Or clone and run locally:
 ```sh

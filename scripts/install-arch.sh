@@ -20,13 +20,15 @@ SRC_DIR="$REAL_HOME/.local/src/nilwm"
 
 # ── 1. Install Xorg, xinit, fonts and build dependencies ──
 echo "[1/6] Installing packages..."
-pacman -Sy --noconfirm --needed \
+if ! pacman -Sy --noconfirm --needed \
     xorg-server xorg-xinit xorg-xsetroot \
     base-devel \
     libx11 libxft libxinerama freetype2 fontconfig pkg-config \
     ttf-dejavu \
     dmenu \
-    git >/dev/null
+    git >/dev/null; then
+    echo "WARNING: pacman had errors. Some packages may not have installed."
+fi
 
 # Install st terminal if not present
 if ! command -v st >/dev/null 2>&1; then

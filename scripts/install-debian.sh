@@ -21,14 +21,17 @@ SRC_DIR="$REAL_HOME/.local/src/nilwm"
 
 # ── 1. Install Xorg, xinit, fonts and build dependencies ──
 echo "[1/6] Installing packages..."
-apt-get update -qq
+if ! apt-get update -qq; then
+    echo "WARNING: apt-get update had errors (stale repo?). Continuing anyway..."
+fi
 apt-get install -y -qq \
     xorg xinit \
     build-essential \
     libx11-dev libxft-dev libxinerama-dev libfreetype6-dev libfontconfig1-dev \
     fonts-dejavu fonts-liberation \
     dmenu suckless-tools \
-    git xsetroot >/dev/null
+    x11-xserver-utils \
+    git >/dev/null
 
 # Install st terminal if not present
 if ! command -v st >/dev/null 2>&1; then

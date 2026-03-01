@@ -1,0 +1,5 @@
+dwm/*.o
+dwm/nilwm
+*.swp
+*.swo
+*~

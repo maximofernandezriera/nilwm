@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=NilWM
+Comment=OXWM-compatible tiling window manager based on DWM
+Exec=nilwm
+Type=XSession

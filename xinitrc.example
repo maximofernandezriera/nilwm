@@ -1,0 +1,15 @@
+#!/bin/sh
+# NilWM .xinitrc example
+# Copy to ~/.xinitrc and run 'startx'
+
+# Set wallpaper (optional — uncomment and set path)
+# feh --bg-scale ~/wallpaper.jpg &
+
+# Compositor for transparency/shadows (optional)
+# picom &
+
+# Status bar
+nilwm-status.sh &
+
+# Start NilWM
+exec nilwm

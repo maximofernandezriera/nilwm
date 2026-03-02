@@ -5,11 +5,13 @@
 
 get_ram() {
     if [ -f /proc/meminfo ]; then
-        total=$(awk '/^MemTotal/ {printf "%.1f", $2/1048576}' /proc/meminfo)
-        avail=$(awk '/^MemAvailable/ {print $2}' /proc/meminfo)
         totalk=$(awk '/^MemTotal/ {print $2}' /proc/meminfo)
-        used=$(awk "BEGIN {printf \"%.1f\", ($totalk - $avail)/1048576}")
-        printf "RAM: %s/%s GB" "$used" "$total"
+        availk=$(awk '/^MemAvailable/ {print $2}' /proc/meminfo)
+        usedk=$((totalk - availk))
+        # Convert KB to GB with one decimal
+        total=$(awk "BEGIN {print $totalk/1048576}")
+        used=$(awk "BEGIN {print $usedk/1048576}")
+        printf "RAM: %.1f/%.1f GB" "$used" "$total"
     fi
 }
 

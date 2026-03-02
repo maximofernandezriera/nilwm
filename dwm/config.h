@@ -59,6 +59,7 @@ static const Layout layouts[] = {
 	{ "[F]",      NULL },      /* normie (floating) */
 	{ "[M]",      monocle },   /* monocle (fullscreen stacking) */
 	{ "[G]",      grid },      /* grid (equal-sized grid) */
+	{ NULL,       NULL },      /* terminator for cyclelayout */
 };
 
 /* key definitions — Mod4 = Super key (OXWM default) */

@@ -1,7 +1,29 @@
 #!/bin/sh
 # NilWM status bar — shell-pure status generator
-# Mimics OXWM bar blocks: RAM, datetime, battery (if available)
+# Mimics OXWM bar blocks: CPU, RAM, datetime, battery (if available)
 # Updates xsetroot -name every 5 seconds
+
+# CPU state from previous sample (for delta calculation)
+prev_total=0
+prev_idle=0
+
+get_cpu() {
+    read cpu user nice sys idle iow irq sirq _rest < /proc/stat
+    total=$((user + nice + sys + idle + iow + irq + sirq))
+    idle_all=$((idle + iow))
+
+    if [ "$prev_total" -gt 0 ]; then
+        total_d=$((total - prev_total))
+        idle_d=$((idle_all - prev_idle))
+        if [ "$total_d" -gt 0 ]; then
+            usage=$(( (total_d - idle_d) * 100 / total_d ))
+            printf "CPU: %d%%" "$usage"
+        fi
+    fi
+
+    prev_total=$total
+    prev_idle=$idle_all
+}
 
 get_ram() {
     if [ -f /proc/meminfo ]; then
@@ -25,7 +47,7 @@ get_battery() {
 
     case "$status" in
         Charging)    printf "⚡ %s%%" "$cap" ;;
-        Discharging) printf "- %s%%" "$cap" ;;
+        Discharging) printf -- "🔋 %s%%" "$cap" ;;
         Full)        printf "✓ %s%%" "$cap" ;;
         *)           printf "Bat: %s%%" "$cap" ;;
     esac
@@ -36,15 +58,17 @@ get_datetime() {
 }
 
 while true; do
+    cpu=$(get_cpu)
     ram=$(get_ram)
     bat=$(get_battery)
     dt=$(get_datetime)
 
     # Build status string (mimic OXWM block order)
     status=""
-    [ -n "$ram" ] && status="$ram"
-    [ -n "$bat" ] && status="$status | $bat"
-    [ -n "$dt" ]  && status="$status | $dt"
+    [ -n "$cpu" ] && status="$cpu"
+    [ -n "$ram" ] && status="${status:+$status | }$ram"
+    [ -n "$bat" ] && status="${status:+$status | }$bat"
+    [ -n "$dt" ]  && status="${status:+$status | }$dt"
 
     xsetroot -name "$status"
     sleep 5

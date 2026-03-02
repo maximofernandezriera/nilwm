@@ -6,9 +6,10 @@ NilWM uses the built-in DWM bar for tags and layout symbol, and a **shell-pure s
 
 The status bar shows (matching OXWM's default blocks):
 
-1. **RAM usage** — `RAM: 3.2/15.6 GB`
-2. **Battery** (if available) — `⚡ 85%` / `- 42%` / `✓ 100%`
-3. **Date/Time** — `Sat, Mar 01 - 3:10 pm`
+1. **CPU usage** — `CPU: 15%`
+2. **RAM usage** — `RAM: 3.2/15.6 GB`
+3. **Battery** (if available) — `⚡ 85%` / `- 42%` / `✓ 100%`
+4. **Date/Time** — `Sat, Mar 01 - 3:10 pm`
 
 Blocks are separated by ` | `.
 

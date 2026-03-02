@@ -17,26 +17,45 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 STATUS_SCRIPT="$REPO_ROOT/scripts/nilwm-status.sh"
 CONFIG_H="$REPO_ROOT/dwm/config.h"
 
+# Helper: extract only function definitions from status script (skip the while loop)
+STATUS_FUNCS=$(mktemp)
+sed '/^while true/,$d' "$STATUS_SCRIPT" > "$STATUS_FUNCS"
+
 # ════════════════════════════════════════════
-section "1. Status bar script - RAM function"
+section "1. Status bar script - CPU function"
 # ════════════════════════════════════════════
 if [ -f "$STATUS_SCRIPT" ]; then
-    # Source the script functions
-    . "$STATUS_SCRIPT" 2>/dev/null &
-    SCRIPT_PID=$!
-    sleep 0.1
-    kill $SCRIPT_PID 2>/dev/null || true
-    wait $SCRIPT_PID 2>/dev/null || true
-    
-    # Test get_ram function directly
-    ram_output=$(sh -c '. '"$STATUS_SCRIPT"'; get_ram' 2>/dev/null | head -1)
-    
+    # get_cpu needs two samples; call twice with a small delay
+    cpu_output=$(sh -c '. '"$STATUS_FUNCS"'; get_cpu; sleep 1; get_cpu' 2>/dev/null)
+
+    if echo "$cpu_output" | grep -qE '^CPU: [0-9]+%$'; then
+        pass "get_cpu() produces valid output: $cpu_output"
+    else
+        fail "get_cpu() output invalid or empty: '$cpu_output'"
+    fi
+
+    # Verify CPU reads from /proc/stat
+    if grep -q '/proc/stat' "$STATUS_SCRIPT"; then
+        pass "get_cpu() reads from /proc/stat"
+    else
+        fail "get_cpu() does not read from /proc/stat"
+    fi
+else
+    fail "Status script not found: $STATUS_SCRIPT"
+fi
+
+# ════════════════════════════════════════════
+section "2. Status bar script - RAM function"
+# ════════════════════════════════════════════
+if [ -f "$STATUS_SCRIPT" ]; then
+    ram_output=$(sh -c '. '"$STATUS_FUNCS"'; get_ram' 2>/dev/null | head -1)
+
     if echo "$ram_output" | grep -qE '^RAM: [0-9]+\.[0-9]+/[0-9]+\.[0-9]+ GB$'; then
         pass "get_ram() produces valid output: $ram_output"
     else
         fail "get_ram() output invalid or empty: '$ram_output'"
     fi
-    
+
     # Verify no awk printf issues
     if grep -q 'printf.*%.1f.*awk' "$STATUS_SCRIPT"; then
         warn "Status script still uses awk printf (may cause issues)"
@@ -48,9 +67,9 @@ else
 fi
 
 # ════════════════════════════════════════════
-section "2. Status bar script - Date function"
+section "3. Status bar script - Date function"
 # ════════════════════════════════════════════
-date_output=$(sh -c '. '"$STATUS_SCRIPT"'; get_datetime' 2>/dev/null)
+date_output=$(sh -c '. '"$STATUS_FUNCS"'; get_datetime' 2>/dev/null)
 if echo "$date_output" | grep -qE '^[A-Z][a-z]{2}, [A-Z][a-z]{2} [0-9]{2} - [0-9]+:[0-9]{2} (am|pm)$'; then
     pass "get_datetime() produces valid output: $date_output"
 else
@@ -58,9 +77,9 @@ else
 fi
 
 # ════════════════════════════════════════════
-section "3. Status bar script - Battery function"
+section "4. Status bar script - Battery function"
 # ════════════════════════════════════════════
-bat_output=$(sh -c '. '"$STATUS_SCRIPT"'; get_battery' 2>/dev/null)
+bat_output=$(sh -c '. '"$STATUS_FUNCS"'; get_battery' 2>/dev/null || true)
 if [ -d "/sys/class/power_supply/BAT0" ] || [ -d "/sys/class/power_supply/BAT1" ]; then
     if [ -n "$bat_output" ]; then
         pass "get_battery() produces output: $bat_output"
@@ -76,7 +95,7 @@ else
 fi
 
 # ════════════════════════════════════════════
-section "4. Status bar script - Integration test"
+section "5. Status bar script - Integration test"
 # ════════════════════════════════════════════
 # Run the script for 1 iteration and check xsetroot would be called
 if command -v timeout >/dev/null 2>&1; then
@@ -108,7 +127,7 @@ else
 fi
 
 # ════════════════════════════════════════════
-section "5. config.h - layouts array termination"
+section "6. config.h - layouts array termination"
 # ════════════════════════════════════════════
 if [ -f "$CONFIG_H" ]; then
     # Check for NULL terminator in layouts array
@@ -130,7 +149,7 @@ else
 fi
 
 # ════════════════════════════════════════════
-section "6. config.h - Super+N keybinding"
+section "7. config.h - Super+N keybinding"
 # ════════════════════════════════════════════
 if grep -q 'XK_n.*cyclelayout' "$CONFIG_H"; then
     pass "Super+N mapped to cyclelayout"
@@ -139,15 +158,15 @@ else
 fi
 
 # ════════════════════════════════════════════
-section "7. config.h - Window rules sanity"
+section "8. config.h - Window rules sanity"
 # ════════════════════════════════════════════
 # Verify Gimp rule exists but is separate from layouts
 if grep -q '"Gimp"' "$CONFIG_H"; then
     pass "Gimp window rule present"
     
     # Check that Gimp is in rules[] not layouts[]
-    gimp_in_layouts=$(grep -A 10 'static const Layout layouts' "$CONFIG_H" | grep -c 'Gimp' || echo 0)
-    if [ "$gimp_in_layouts" -eq 0 ]; then
+    gimp_in_layouts=$(grep -A 10 'static const Layout layouts' "$CONFIG_H" | grep -c 'Gimp' || true)
+    if [ "$gimp_in_layouts" = "0" ]; then
         pass "Gimp is NOT in layouts[] array (correct)"
     else
         fail "Gimp found in layouts[] array (memory corruption risk)"
@@ -157,7 +176,7 @@ else
 fi
 
 # ════════════════════════════════════════════
-section "8. Compilation test with fixed config"
+section "9. Compilation test with fixed config"
 # ════════════════════════════════════════════
 DWM_DIR="$REPO_ROOT/dwm"
 if [ -f "$DWM_DIR/Makefile" ]; then
@@ -177,7 +196,7 @@ else
 fi
 
 # ════════════════════════════════════════════
-section "9. Status script syntax and executability"
+section "10. Status script syntax and executability"
 # ════════════════════════════════════════════
 if sh -n "$STATUS_SCRIPT" 2>/dev/null; then
     pass "nilwm-status.sh has valid shell syntax"
@@ -192,7 +211,7 @@ else
 fi
 
 # ════════════════════════════════════════════
-section "10. Verify xsetroot availability"
+section "11. Verify xsetroot availability"
 # ════════════════════════════════════════════
 if command -v xsetroot >/dev/null 2>&1; then
     pass "xsetroot command available"
@@ -215,4 +234,5 @@ if [ "$WARN" -gt 0 ]; then
 fi
 
 echo "SUCCESS: All critical tests passed."
+rm -f "$STATUS_FUNCS"
 exit 0
